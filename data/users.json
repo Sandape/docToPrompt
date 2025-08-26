@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "username": "lizuyin",
+    "email": "3080340895@qq.com",
+    "hashed_password": "$2b$12$YXeCiBcX8lhySE7NAK5IOOhZMQpDBys/A3hSZQyTsZnuGsEqpImiq",
+    "is_active": true,
+    "created_at": "2025-08-25T20:04:10.213519",
+    "updated_at": "2025-08-26T07:34:00.751547",
+    "ai_config": {
+      "api_type": "openai",
+      "api_url": "https://lab.iwhalecloud.com/gpt-proxy",
+      "api_key": "ailab_zRA+K2lckCgf0S8nIpfqYfYv3gBXiG4QsPEJszUsEubM8/foKM2wNrJt1emneNmMQieXipZ9dzDalxj2HionpN3JmRZdjyLw0pvKk2+40ZT+CnKfsU8//dM=",
+      "model_name": "gpt-4o"
+    }
+  }
+]

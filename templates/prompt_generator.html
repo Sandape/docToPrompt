@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt 生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #eef2ff;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --white: #ffffff;
+            --accent: #8b5cf6;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Layout Container */
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            padding: 0 2rem;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .header-info a {
+            color: var(--gray-600);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .header-info a:hover {
+            color: var(--primary);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--gray-600);
+            flex: 1;
+            justify-content: center;
+        }
+
+        .breadcrumb a {
+            color: var(--gray-600);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--gray-400);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: visible;
+            padding: 20px 0;
+        }
+
+        /* Simplified card container */
+        .card-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 40px;
+            overflow: visible;
+        }
+
+        /* Ensure cards are properly layered */
+        .interface-card {
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .interface-card.active {
+            z-index: 10;
+        }
+
+        /* Ensure input fields always show text cursor */
+        .form-input, .form-textarea {
+            cursor: text !important;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+
+        .form-input:hover, .form-textarea:hover {
+            cursor: text !important;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            cursor: text !important;
+        }
+
+        /* Ensure textarea shows text cursor */
+        .form-textarea {
+            cursor: text !important;
+            resize: vertical;
+            min-height: 90px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+
+        /* Navigation Buttons */
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border: none;
+            background: var(--white);
+            color: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+            border: 2px solid var(--primary-light);
+            z-index: 50;
+        }
+
+        .nav-button:hover {
+            background: var(--primary);
+            color: var(--white);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 16px 48px rgba(99, 102, 241, 0.3);
+        }
+
+        .nav-button:disabled {
+            background: var(--gray-100);
+            color: var(--gray-400);
+            cursor: not-allowed;
+            transform: translateY(-50%);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-button.left {
+            left: 20px;
+        }
+
+        .nav-button.right {
+            right: 20px;
+        }
+
+        .add-button {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: var(--white);
+        }
+
+        .add-button:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 16px 48px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Interface Card */
+        .interface-card {
+            width: calc(60vh * 1.8);
+            height: 60vh;
+            max-width: calc(100vw - 200px);
+            background: var(--white);
+            border-radius: 24px;
+            border: 1px solid var(--gray-100);
+            overflow: hidden;
+            display: flex;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.95);
+            position: absolute;
+            visibility: hidden;
+            filter: blur(0);
+            will-change: transform, box-shadow, z-index;
+        }
+
+        .interface-card.active {
+            opacity: 1;
+            transform: scale(1);
+            position: relative;
+            visibility: visible;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            filter: blur(0);
+        }
+
+        .interface-card:hover {
+            box-shadow: 0 32px 80px rgba(99, 102, 241, 0.2);
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--primary-light);
+            z-index: 20;
+            position: relative;
+        }
+
+        .interface-card.active:hover {
+            transform: translateY(-8px) scale(1.02);
+            z-index: 20;
+            position: relative;
+        }
+
+        .interface-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .interface-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Card Header */
+        .card-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--accent), var(--primary-dark));
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 10;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .remove-card-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .remove-card-btn:hover {
+            background: rgba(239, 68, 68, 0.9);
+            transform: scale(1.1);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        /* Card Content */
+        .card-content {
+            display: flex;
+            height: 100%;
+            padding-top: 60px;
+            width: 100%;
+            animation: contentFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+        }
+
+        /* Column animations */
+        .api-info-column,
+        .database-column {
+            animation: columnSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+        }
+
+        .api-info-column {
+            animation-delay: 0.3s;
+        }
+
+        .database-column {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes columnSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .database-column {
+            animation-name: columnSlideInRight;
+        }
+
+        @keyframes columnSlideInRight {
+            0% {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Left Column - API Info */
+        .api-info-column {
+            flex: 1;
+            padding: 28px;
+            border-right: 1px solid var(--gray-200);
+            background: var(--white);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-width: 0; /* 确保flex子元素不会溢出 */
+            width: 50%; /* 固定宽度为50% */
+            box-sizing: border-box;
+        }
+
+        /* Right Column - Database DDL */
+        .database-column {
+            flex: 1;
+            padding: 28px;
+            background: var(--gray-50);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0; /* 确保flex子元素不会溢出 */
+            width: 50%; /* 固定宽度为50% */
+            box-sizing: border-box;
+        }
+
+        .column-header {
+            background: linear-gradient(135deg, var(--primary-light), #f0f9ff, #e0f2fe);
+            color: var(--primary-dark);
+            padding: 20px;
+            margin: -28px -28px 20px -28px;
+            border-left: 6px solid var(--primary);
+            position: relative;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
+            flex-shrink: 0; /* 防止header被压缩 */
+        }
+
+        .column-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .column-desc {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+            flex-shrink: 0; /* 防止form group被压缩 */
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--white);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            cursor: text;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.08), 0 8px 32px rgba(99, 102, 241, 0.12);
+            transform: translateY(-2px);
+            cursor: text;
+        }
+
+        .form-input:hover, .form-textarea:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.08);
+            cursor: text;
+        }
+
+
+
+        /* Database Tables */
+        .database-tables {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding-right: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--gray-100);
+            min-height: 0; /* 确保flex子元素可以正确滚动 */
+        }
+
+        .database-tables::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .database-tables::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: 4px;
+        }
+
+        .database-tables::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .database-tables::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Firefox scrollbar styles */
+        .database-tables {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--gray-100);
+        }
+
+        .database-table-item {
+            margin-bottom: 16px;
+            padding: 20px;
+            background: var(--white);
+            border: 2px solid var(--gray-100);
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            flex-shrink: 0; /* 防止table item被压缩 */
+        }
+
+        .database-table-item:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .database-table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .table-title {
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .remove-table-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--danger);
+            color: var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        }
+
+        .remove-table-btn:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        .add-table-btn {
+            width: 100%;
+            padding: 16px;
+            border: 2px dashed var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            flex-shrink: 0; /* 防止按钮被压缩 */
+        }
+
+        .add-table-btn:hover {
+            background: var(--primary);
+            color: var(--white);
+            border-style: solid;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Bottom Actions */
+        .bottom-actions {
+            background: var(--white);
+            border-top: 1px solid var(--gray-200);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            padding: 24px 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 28px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            font-family: inherit;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: var(--white);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            width: 90%;
+            max-width: 1000px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--gray-800);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--gray-200);
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-footer-left {
+            display: flex;
+            gap: 12px;
+        }
+
+
+
+        /* Alerts */
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--gray-600);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--gray-200);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .card-container {
+                padding: 0 30px;
+            }
+            
+            .nav-button {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+            
+            .nav-button.left {
+                left: 15px;
+            }
+            
+            .nav-button.right {
+                right: 15px;
+            }
+
+            .interface-card {
+                width: calc(65vh * 1.8);
+                height: 65vh;
+                max-width: calc(100vw - 120px);
+            }
+
+            .database-tables {
+                max-height: calc(65vh - 200px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                gap: 1rem;
+            }
+
+            .breadcrumb {
+                display: none;
+            }
+
+            .card-container {
+                padding: 0 20px;
+            }
+            
+            .nav-button {
+                position: static;
+                margin: 10px;
+            }
+            
+            .interface-card {
+                flex-direction: column;
+                width: calc(75vh * 1.8);
+                height: 75vh;
+                max-width: calc(100vw - 80px);
+            }
+            
+            .api-info-column {
+                border-right: none;
+                border-bottom: 1px solid var(--gray-200);
+                flex: 1;
+                width: 100%;
+            }
+
+            .database-column {
+                flex: 1;
+                width: 100%;
+            }
+            
+            .database-tables {
+                max-height: calc(75vh - 280px);
+            }
+            
+            .btn {
+                min-width: 100px;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-container {
+                padding: 0 15px;
+            }
+
+            .interface-card {
+                width: calc(80vh * 1.8);
+                height: 80vh;
+                max-width: calc(100vw - 60px);
+            }
+
+            .card-header {
+                height: 50px;
+                padding: 0 16px;
+            }
+
+            .card-title {
+                font-size: 16px;
+            }
+
+            .card-content {
+                padding-top: 50px;
+            }
+
+            .api-info-column,
+            .database-column {
+                padding: 12px;
+                width: 100%;
+            }
+
+            .column-header {
+                padding: 12px;
+                margin: -12px -12px 12px -12px;
+            }
+
+            .database-tables {
+                max-height: calc(80vh - 220px);
+            }
+        }
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from { 
+                opacity: 1; 
+                transform: scale(1);
+                visibility: visible;
+            }
+            to { 
+                opacity: 0; 
+                transform: scale(0.95);
+                visibility: hidden;
+            }
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Simplified card transitions */
+        .interface-card {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .interface-card.active {
+            z-index: 10;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .interface-card:not(.active) {
+            z-index: 1;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        /* Smooth fade transitions for other cases */
+        .card-fade-out {
+            animation: fadeOutSmooth 0.3s ease forwards;
+        }
+
+        @keyframes fadeOutSmooth {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+        }
+
+        /* Markdown preview styles */
+        .markdown-preview {
+            padding: 20px;
+            background: var(--gray-50);
+            border-radius: 10px;
+            overflow-y: auto;
+            max-height: 60vh;
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--gray-800);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .markdown-preview p {
+            margin-bottom: 15px;
+        }
+
+        .markdown-preview ul, .markdown-preview ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-preview li {
+            margin-bottom: 5px;
+        }
+
+        .markdown-preview blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 15px;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 15px;
+            color: var(--gray-700);
+        }
+
+        .markdown-preview pre {
+            background: var(--gray-100);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .markdown-preview code {
+            background: var(--gray-100);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .markdown-preview a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .markdown-preview a:hover {
+            text-decoration: underline;
+        }
+
+        .markdown-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .markdown-preview th, .markdown-preview td {
+            border: 1px solid var(--gray-300);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .markdown-preview th {
+            background: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <a href="/" class="logo">
+                <i class="fas fa-magic"></i>
+                AI Prompt 生成器
+            </a>
+            <nav class="breadcrumb">
+                <a href="/"><i class="fas fa-home"></i> 主菜单</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="/interface-type-menu">单次精译</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="/interface-type-menu">任务类型选择</a>
+                <span class="breadcrumb-separator">/</span>
+                <span>查询类接口</span>
+            </nav>
+            <div class="header-info">
+                <div id="userInfo" style="display: none;">
+                    <span id="welcomeText"><i class="fas fa-user"></i> 欢迎，<span id="username"></span></span>
+                    <a href="/auth/profile">
+                        <i class="fas fa-user-cog"></i> 个人中心
+                    </a>
+                    <a href="#" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> 退出
+                    </a>
+                </div>
+                <div id="authInfo">
+                    <a href="/auth">
+                        <i class="fas fa-sign-in-alt"></i> 登录/注册
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content - 80% -->
+        <main class="main-content">
+            <div class="card-container">
+                <!-- Left Navigation Button -->
+                <button type="button" class="nav-button left" id="prevBtn" onclick="previousCard()" title="上一张卡片">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <!-- Interface Cards Container -->
+                <div id="cardsContainer">
+                    <!-- Initial Interface Card -->
+                    <div class="interface-card active" data-index="0">
+                        <!-- Card Header -->
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-cog"></i>
+                                接口 1
+                            </div>
+                            <button type="button" class="remove-card-btn" onclick="removeInterfaceCard(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- Card Content -->
+                        <div class="card-content">
+                            <!-- Left Column: API Info -->
+                            <div class="api-info-column">
+                                <div class="column-header">
+                                    <div class="column-title">
+                                        <i class="fas fa-code"></i>
+                                        接口信息
+                                    </div>
+                                    <div class="column-desc">填写接口的基本信息和请求响应示例</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-tag"></i>
+                                        接口名称
+                                    </label>
+                                    <input type="text" class="form-input api-name" placeholder="例如：用户收藏添加接口" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-route"></i>
+                                        接口路由
+                                    </label>
+                                    <input type="text" class="form-input api-route" placeholder="例如：POST /api/user/favorite/add" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-arrow-up"></i>
+                                        请求报文示例
+                                    </label>
+                                    <textarea class="form-textarea api-request" placeholder="请输入JSON格式的请求报文示例" required></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-arrow-down"></i>
+                                        响应报文示例
+                                    </label>
+                                    <textarea class="form-textarea api-response" placeholder="请输入JSON格式的响应报文示例" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Database DDL -->
+                            <div class="database-column">
+                                <div class="column-header">
+                                    <div class="column-title">
+                                        <i class="fas fa-database"></i>
+                                        数据库表DDL
+                                    </div>
+                                    <div class="column-desc">添加与此接口相关的数据库表结构</div>
+                                </div>
+
+                                <div class="database-tables" id="databaseTables-0">
+                                    <div class="database-table-item">
+                                        <div class="database-table-header">
+                                            <div class="table-title">
+                                                <i class="fas fa-table"></i>
+                                                数据表 1
+                                            </div>
+                                            <button type="button" class="remove-table-btn" onclick="removeDatabaseTable(this)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <textarea class="form-textarea database-ddl" placeholder="请输入数据库表的DDL语句"></textarea>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="add-table-btn" onclick="addDatabaseTable(0)">
+                                    <i class="fas fa-plus"></i>
+                                    添加数据表
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Navigation Button -->
+                <button type="button" class="nav-button right" id="nextBtn" onclick="nextCard()" title="下一张卡片" style="display: none;">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                
+                <!-- Add Card Button -->
+                <button type="button" class="nav-button right add-button" id="addBtn" onclick="addInterfaceCard()" title="添加新卡片">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- Bottom Actions - 10% -->
+        <div class="bottom-actions">
+            <div class="action-buttons">
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                    <i class="fas fa-undo"></i>
+                    重置当前卡片
+                </button>
+                <button type="button" class="btn btn-warning" onclick="resetToInitialState()">
+                    <i class="fas fa-refresh"></i>
+                    重置页面
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">
+                    <i class="fas fa-magic"></i>
+                    生成Prompt
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitFormWithAI()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="fas fa-robot"></i>
+                    AI增强生成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-file-alt"></i>
+                    生成的Prompt模板
+                </div>
+                <button class="modal-close" onclick="closeResultModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="markdown-preview" id="markdownPreview"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="copyPromptToClipboard()">
+                    <i class="fas fa-copy"></i>
+                    复制
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-body">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在生成Prompt模板，请稍候...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" style="position: fixed; top: 100px; right: 20px; z-index: 1001; width: 300px;"></div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentCardIndex = 0;
+        let totalCards = 1;
+        let originalPromptText = '';
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                checkUserAuth();
+                updateNavigation();
+                initializeScrollHandlers();
+                initializeKeyboardNavigation();
+                
+                console.log('页面初始化完成');
+            } catch (error) {
+                console.error('页面初始化失败:', error);
+            }
+        });
+
+        // Keyboard navigation
+        function initializeKeyboardNavigation() {
+            document.addEventListener('keydown', function(e) {
+                // Only handle navigation if not typing in an input field
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        previousCard();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextCard();
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        navigateToCard(0);
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        navigateToCard(totalCards - 1);
+                        break;
+                }
+            });
+        }
+
+        // User authentication check
+        async function checkUserAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                showAuthInfo();
+                showAccessControl();
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showUserInfo(currentUser);
+                    hideAccessControl();
+                    console.log('用户认证成功:', currentUser.username);
+                } else {
+                    localStorage.removeItem('access_token');
+                    showAuthInfo();
+                    showAccessControl();
+                    console.log('用户认证失败，已清除令牌');
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('access_token');
+                showAuthInfo();
+                showAccessControl();
+            }
+        }
+
+        function showUserInfo(user) {
+            document.getElementById('username').textContent = user.username;
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('authInfo').style.display = 'none';
+        }
+
+        function showAuthInfo() {
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('authInfo').style.display = 'block';
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            currentUser = null;
+            showAuthInfo();
+            showAccessControl();
+            showAlert('success', '已退出登录');
+            console.log('用户已退出登录');
+        }
+
+        // Access control modal
+        function showAccessControl() {
+            const accessControlDiv = document.createElement('div');
+            accessControlDiv.id = 'accessControlOverlay';
+            accessControlDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            accessControlDiv.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    border-radius: 16px;
+                    text-align: center;
+                    max-width: 400px;
+                    margin: 20px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                ">
+                    <div style="font-size: 48px; color: #4f46e5; margin-bottom: 20px;">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h2 style="color: #1f2937; margin-bottom: 16px;">需要登录</h2>
+                    <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">
+                        您需要登录才能使用 AI Prompt 生成器。<br>
+                        登录后可以享受更好的体验！
+                    </p>
+                    <div>
+                        <a href="/auth" style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            padding: 12px 24px;
+                            background: linear-gradient(135deg, #4f46e5, #3730a3);
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            font-weight: 500;
+                            margin-right: 12px;
+                        ">
+                            <i class="fas fa-sign-in-alt"></i>
+                            立即登录
+                        </a>
+                        <button onclick="hideAccessControl()" style="
+                            padding: 12px 24px;
+                            background: #f3f4f6;
+                            color: #6b7280;
+                            border: none;
+                            border-radius: 8px;
+                            font-weight: 500;
+                            cursor: pointer;
+                        ">
+                            继续浏览
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(accessControlDiv);
+            console.log('显示访问控制弹窗');
+        }
+
+        function hideAccessControl() {
+            const overlay = document.getElementById('accessControlOverlay');
+            if (overlay) {
+                overlay.remove();
+                console.log('隐藏访问控制弹窗');
+            }
+        }
+
+        // Interface card management
+        function addInterfaceCard() {
+            totalCards++;
+            const cardsContainer = document.getElementById('cardsContainer');
+            
+            const newCard = document.createElement('div');
+            newCard.className = 'interface-card';
+            newCard.setAttribute('data-index', totalCards - 1);
+            
+            newCard.innerHTML = createCardHTML(totalCards);
+            cardsContainer.appendChild(newCard);
+            
+            // Add simple animation
+            newCard.classList.add('bounce-in');
+            
+            // Navigate to the new card
+            setTimeout(() => {
+                updateNavigation();
+                navigateToCard(totalCards - 1);
+            }, 100);
+            
+            console.log(`添加了新卡片，当前总卡片数: ${totalCards}`);
+        }
+
+        function removeInterfaceCard(button) {
+            if (totalCards <= 1) {
+                showAlert('error', '至少需要保留一个接口配置');
+                return;
+            }
+            
+            const card = button.closest('.interface-card');
+            const cardIndex = parseInt(card.getAttribute('data-index'));
+            
+            card.remove();
+            totalCards--;
+            
+            // Update card indices
+            const cards = document.querySelectorAll('.interface-card');
+            cards.forEach((card, index) => {
+                card.setAttribute('data-index', index);
+                updateCardTitle(card, index + 1);
+                // Update database tables container ID
+                const dbTables = card.querySelector('.database-tables');
+                if (dbTables) {
+                    dbTables.id = `databaseTables-${index}`;
+                    // Update add table button onclick
+                    const addBtn = card.querySelector('.add-table-btn');
+                    if (addBtn) {
+                        addBtn.setAttribute('onclick', `addDatabaseTable(${index})`);
+                    }
+                }
+            });
+            
+            // Adjust current index if needed
+            if (currentCardIndex >= totalCards) {
+                currentCardIndex = totalCards - 1;
+            }
+            
+            updateNavigation();
+            navigateToCard(currentCardIndex);
+            
+            console.log(`删除了卡片 ${cardIndex + 1}，当前总卡片数: ${totalCards}`);
+        }
+
+        function createCardHTML(cardNumber) {
+            return `
+                <!-- Card Header -->
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-cog"></i>
+                        接口 ${cardNumber}
+                    </div>
+                    <button type="button" class="remove-card-btn" onclick="removeInterfaceCard(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Card Content -->
+                <div class="card-content">
+                    <!-- Left Column: API Info -->
+                    <div class="api-info-column">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <i class="fas fa-code"></i>
+                                接口信息
+                            </div>
+                            <div class="column-desc">填写接口的基本信息和请求响应示例</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                接口名称
+                            </label>
+                            <input type="text" class="form-input api-name" placeholder="例如：用户收藏添加接口" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-route"></i>
+                                接口路由
+                            </label>
+                            <input type="text" class="form-input api-route" placeholder="例如：POST /api/user/favorite/add" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-arrow-up"></i>
+                                请求报文示例
+                            </label>
+                            <textarea class="form-textarea api-request" placeholder="请输入JSON格式的请求报文示例" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-arrow-down"></i>
+                                响应报文示例
+                            </label>
+                            <textarea class="form-textarea api-response" placeholder="请输入JSON格式的响应报文示例" required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Database DDL -->
+                    <div class="database-column">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <i class="fas fa-database"></i>
+                                数据库表DDL
+                            </div>
+                            <div class="column-desc">添加与此接口相关的数据库表结构</div>
+                        </div>
+
+                        <div class="database-tables" id="databaseTables-${cardNumber - 1}">
+                            <div class="database-table-item">
+                                <div class="database-table-header">
+                                    <div class="table-title">
+                                        <i class="fas fa-table"></i>
+                                        数据表 1
+                                    </div>
+                                    <button type="button" class="remove-table-btn" onclick="removeDatabaseTable(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <textarea class="form-textarea database-ddl" placeholder="请输入数据库表的DDL语句"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="button" class="add-table-btn" onclick="addDatabaseTable(${cardNumber - 1})">
+                            <i class="fas fa-plus"></i>
+                            添加数据表
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCardTitle(card, number) {
+            const title = card.querySelector('.card-title');
+            title.innerHTML = `<i class="fas fa-cog"></i> 接口 ${number}`;
+        }
+
+        // Database table management
+        function addDatabaseTable(cardIndex) {
+            const tablesContainer = document.getElementById(`databaseTables-${cardIndex}`);
+            if (!tablesContainer) {
+                console.error(`找不到数据库表容器: databaseTables-${cardIndex}`);
+                return;
+            }
+            
+            const tableCount = tablesContainer.children.length + 1;
+            
+            const newTable = document.createElement('div');
+            newTable.className = 'database-table-item';
+            newTable.innerHTML = `
+                <div class="database-table-header">
+                    <div class="table-title">
+                        <i class="fas fa-table"></i>
+                        数据表 ${tableCount}
+                    </div>
+                    <button type="button" class="remove-table-btn" onclick="removeDatabaseTable(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea class="form-textarea database-ddl" placeholder="请输入数据库表的DDL语句"></textarea>
+            `;
+            
+            tablesContainer.appendChild(newTable);
+            
+            console.log(`在卡片 ${cardIndex + 1} 中添加了数据表 ${tableCount}`);
+        }
+
+        function removeDatabaseTable(button) {
+            const tableItem = button.closest('.database-table-item');
+            const tablesContainer = tableItem.parentElement;
+            
+            if (tablesContainer.children.length <= 1) {
+                showAlert('error', '每个接口至少需要一个数据表');
+                return;
+            }
+            
+            tableItem.remove();
+            
+            // Update table numbers
+            const tables = tablesContainer.querySelectorAll('.database-table-item');
+            tables.forEach((table, index) => {
+                const title = table.querySelector('.table-title');
+                title.innerHTML = `<i class="fas fa-table"></i> 数据表 ${index + 1}`;
+            });
+            
+            console.log('删除了数据表，剩余数量:', tables.length);
+        }
+
+        // Navigation and card management
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const addBtn = document.getElementById('addBtn');
+            
+            // Show/hide previous button
+            prevBtn.disabled = currentCardIndex === 0;
+            
+            // Show next button if there are more cards, otherwise show add button
+            if (currentCardIndex < totalCards - 1) {
+                nextBtn.style.display = 'flex';
+                addBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'none';
+                addBtn.style.display = 'flex';
+            }
+        }
+
+        function navigateToCard(index) {
+            if (index < 0 || index >= totalCards || index === currentCardIndex) return;
+            
+            const direction = index > currentCardIndex ? 'next' : 'prev';
+            currentCardIndex = index;
+            
+            updateActiveCard(direction);
+            updateNavigation();
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                navigateToCard(currentCardIndex - 1);
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < totalCards - 1) {
+                navigateToCard(currentCardIndex + 1);
+            }
+        }
+
+        function updateActiveCard(direction = 'next') {
+            const cards = document.querySelectorAll('.interface-card');
+            
+            // Simple card switching: hide all cards, show only the active one
+            cards.forEach((card, index) => {
+                if (index === currentCardIndex) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+        }
+
+        function initializeScrollHandlers() {
+            // Initialize navigation
+            updateNavigation();
+            
+            // Ensure the first card is active and visible
+            const firstCard = document.querySelector('.interface-card');
+            if (firstCard) {
+                firstCard.classList.add('active');
+            }
+            
+            // Update active card state
+            updateActiveCard();
+        }
+
+        // Bottom action buttons
+        function resetForm() {
+            if (confirm('确定要重置当前接口的表单数据吗？')) {
+                const currentCard = document.querySelector('.interface-card.active');
+                if (currentCard) {
+                    currentCard.querySelectorAll('input, textarea').forEach(input => {
+                        input.value = '';
+                    });
+                    showAlert('success', '当前接口表单已重置');
+                    console.log('重置了当前接口表单');
+                }
+            }
+        }
+
+        function resetToInitialState() {
+            if (confirm('确定要重置到初始状态吗？这将删除所有接口配置并重新开始。')) {
+                // Remove all cards except the first one
+                const cardsContainer = document.getElementById('cardsContainer');
+                const allCards = cardsContainer.querySelectorAll('.interface-card');
+                
+                // Remove extra cards
+                for (let i = 1; i < allCards.length; i++) {
+                    allCards[i].remove();
+                }
+                
+                // Reset the first card
+                const firstCard = cardsContainer.querySelector('.interface-card');
+                if (firstCard) {
+                    firstCard.querySelectorAll('input, textarea').forEach(input => {
+                        input.value = '';
+                    });
+                    
+                    // Reset database tables to just one
+                    const databaseTables = firstCard.querySelector('.database-tables');
+                    databaseTables.innerHTML = `
+                        <div class="database-table-item">
+                            <div class="database-table-header">
+                                <div class="table-title">
+                                    <i class="fas fa-table"></i>
+                                    数据表 1
+                                </div>
+                                <button type="button" class="remove-table-btn" onclick="removeDatabaseTable(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <textarea class="form-textarea database-ddl" placeholder="请输入数据库表的DDL语句"></textarea>
+                        </div>
+                    `;
+                }
+                
+                // Reset global state
+                currentCardIndex = 0;
+                totalCards = 1;
+                
+                // Update UI
+                updateNavigation();
+                updateActiveCard();
+                
+                showAlert('success', '已重置到初始状态');
+                console.log('已重置到初始状态');
+            }
+        }
+
+        function submitForm() {
+            if (!currentUser) {
+                showAlert('error', '请先登录才能生成Prompt模板');
+                showAccessControl();
+                return;
+            }
+
+            const apis = collectApiData();
+            if (apis.length === 0) {
+                showAlert('error', '请至少配置一个完整的接口信息');
+                return;
+            }
+
+            // 验证数据完整性
+            const incompleteCards = [];
+            const cards = document.querySelectorAll('.interface-card');
+            cards.forEach((card, index) => {
+                const name = card.querySelector('.api-name').value.trim();
+                const route = card.querySelector('.api-route').value.trim();
+                const request_example = card.querySelector('.api-request').value.trim();
+                const response_example = card.querySelector('.api-response').value.trim();
+                
+                if (!name || !route || !request_example || !response_example) {
+                    incompleteCards.push(index + 1);
+                }
+            });
+
+            if (incompleteCards.length > 0) {
+                showAlert('error', `以下卡片信息不完整，请完善后重试：${incompleteCards.join(', ')}`);
+                return;
+            }
+
+            generatePrompt(apis);
+        }
+
+        // Data collection
+        function collectApiData() {
+            const cards = document.querySelectorAll('.interface-card');
+            const apis = [];
+
+            cards.forEach((card, index) => {
+                const name = card.querySelector('.api-name').value.trim();
+                const route = card.querySelector('.api-route').value.trim();
+                const request_example = card.querySelector('.api-request').value.trim();
+                const response_example = card.querySelector('.api-response').value.trim();
+                
+                const databaseTables = card.querySelectorAll('.database-ddl');
+                const database_tables = Array.from(databaseTables)
+                    .map(textarea => textarea.value.trim())
+                    .filter(text => text.length > 0);
+
+                if (name && route && request_example && response_example) {
+                    apis.push({
+                        name,
+                        route,
+                        request_example,
+                        response_example,
+                        database_tables
+                    });
+                    console.log(`卡片 ${index + 1} 数据收集成功:`, { name, route, database_tables_count: database_tables.length });
+                } else {
+                    console.log(`卡片 ${index + 1} 数据不完整:`, { name, route, request_example: !!request_example, response_example: !!response_example });
+                }
+            });
+
+            console.log('收集到的API数据:', apis);
+            return apis;
+        }
+
+        // Prompt generation
+        async function generatePrompt(apis) {
+            if (!apis || apis.length === 0) {
+                showAlert('error', '没有有效的接口数据');
+                return;
+            }
+
+            showLoadingModal();
+
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    throw new Error('未找到访问令牌，请重新登录');
+                }
+
+                const requestData = { apis };
+                
+                console.log('发送到后端的数据:', requestData);
+                
+                const response = await fetch('/prompt-generator/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    originalPromptText = result.prompt;
+                    showResultModal(result.prompt);
+                    showAlert('success', `成功生成包含${apis.length}个接口的Prompt模板！`);
+                } else {
+                    throw new Error(result.error || '生成失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '生成失败：' + error.message);
+                
+                // 如果是认证错误，重新检查用户状态
+                if (error.message.includes('认证') || error.message.includes('令牌')) {
+                    checkUserAuth();
+                }
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // AI Enhanced Generation
+        function submitFormWithAI() {
+            if (!currentUser) {
+                showAlert('error', '请先登录才能生成Prompt模板');
+                showAccessControl();
+                return;
+            }
+
+            const apis = collectApiData();
+            if (apis.length === 0) {
+                showAlert('error', '请至少配置一个完整的接口信息');
+                return;
+            }
+
+            // 验证数据完整性
+            const incompleteCards = [];
+            const cards = document.querySelectorAll('.interface-card');
+            cards.forEach((card, index) => {
+                const name = card.querySelector('.api-name').value.trim();
+                const route = card.querySelector('.api-route').value.trim();
+                const request_example = card.querySelector('.api-request').value.trim();
+                const response_example = card.querySelector('.api-response').value.trim();
+                
+                if (!name || !route || !request_example || !response_example) {
+                    incompleteCards.push(index + 1);
+                }
+            });
+
+            if (incompleteCards.length > 0) {
+                showAlert('error', `以下卡片信息不完整，请完善后重试：${incompleteCards.join(', ')}`);
+                return;
+            }
+
+            generateAIPrompt(apis);
+        }
+
+        // AI Prompt generation
+        async function generateAIPrompt(apis) {
+            if (!apis || apis.length === 0) {
+                showAlert('error', '没有有效的接口数据');
+                return;
+            }
+
+            showLoadingModal();
+            // 更新加载提示为AI增强
+            const loadingText = document.querySelector('.loading p');
+            if (loadingText) {
+                loadingText.textContent = '正在使用AI生成增强版Prompt模板，请稍候...';
+            }
+
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    throw new Error('未找到访问令牌，请重新登录');
+                }
+
+                const requestData = { apis };
+                
+                console.log('发送到AI后端的数据:', requestData);
+                
+                const response = await fetch('/prompt-generator/generate-ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    originalPromptText = result.prompt;
+                    showResultModal(result.prompt);
+                    if (result.error) {
+                        // AI增强失败，但返回了基础版本
+                        showAlert('warning', `AI增强失败，已生成基础版本。${result.error}`);
+                    } else {
+                        // AI增强成功
+                        showAlert('success', `成功生成AI增强版Prompt模板！包含${apis.length}个接口。`);
+                    }
+                } else {
+                    throw new Error(result.error || 'AI生成失败');
+                }
+            } catch (error) {
+                console.error('AI Error:', error);
+                if (error.message.includes('请先在个人中心配置AI服务')) {
+                    showAlert('error', 'AI生成失败：请先在个人中心配置AI服务，或使用普通生成按钮。');
+                } else {
+                    showAlert('error', 'AI生成失败：' + error.message);
+                }
+                
+                // 如果是认证错误，重新检查用户状态
+                if (error.message.includes('认证') || error.message.includes('令牌')) {
+                    checkUserAuth();
+                }
+            } finally {
+                hideLoadingModal();
+                // 恢复默认加载提示
+                const loadingText = document.querySelector('.loading p');
+                if (loadingText) {
+                    loadingText.textContent = '正在生成Prompt模板，请稍候...';
+                }
+            }
+        }
+
+        // Modal management
+        function showResultModal(promptText) {
+            const modal = document.getElementById('resultModal');
+            modal.style.display = 'flex';
+            
+            // Store original text for copying
+            originalPromptText = promptText;
+            
+            // Render markdown and display in preview
+            const previewElement = document.getElementById('markdownPreview');
+            previewElement.innerHTML = marked.parse(promptText);
+            
+            // Apply syntax highlighting to code blocks
+            previewElement.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            console.log('显示结果模态框');
+        }
+
+
+
+        function closeResultModal() {
+            const modal = document.getElementById('resultModal');
+            modal.style.display = 'none';
+            console.log('关闭结果模态框');
+        }
+
+        function showLoadingModal() {
+            const modal = document.getElementById('loadingModal');
+            modal.style.display = 'flex';
+            console.log('显示加载模态框');
+        }
+
+        function hideLoadingModal() {
+            const modal = document.getElementById('loadingModal');
+            modal.style.display = 'none';
+            console.log('隐藏加载模态框');
+        }
+
+        // Result modal actions
+
+
+        function copyPromptToClipboard() {
+            const currentText = originalPromptText;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(currentText).then(function() {
+                    showAlert('success', 'Prompt已成功复制到剪贴板！');
+                }, function(err) {
+                    showAlert('error', '复制失败，请手动复制。');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showAlert('success', 'Prompt已成功复制到剪贴板！');
+                } catch (err) {
+                    showAlert('error', '复制失败，请手动复制。');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Alert system
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} fade-in`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                <span>${message}</span>
+            `;
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        // Click outside modal to close
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                if (e.target.id === 'resultModal') {
+                    closeResultModal();
+                }
+            }
+        });
+
+        // Fill example data (for testing)
+        function fillExampleData() {
+            const firstCard = document.querySelector('.interface-card');
+            if (firstCard) {
+                firstCard.querySelector('.api-name').value = '用户收藏添加接口';
+                firstCard.querySelector('.api-route').value = 'POST /api/user/favorite/add';
+                firstCard.querySelector('.api-request').value = `{
+  "userId": 12345,
+  "itemId": 67890,
+  "category": "article",
+  "tags": ["tech", "programming"]
+}`;
+                firstCard.querySelector('.api-response').value = `{
+  "code": 200,
+  "message": "添加成功",
+  "data": {
+    "favoriteId": 98765,
+    "userId": 12345,
+    "itemId": 67890,
+    "createdAt": "2025-01-14T10:30:00Z"
+  }
+}`;
+                firstCard.querySelector('.database-ddl').value = `CREATE TABLE user_favorites (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  item_id BIGINT NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_item_id (item_id)
+);`;
+            }
+        }
+
+
+    </script>
+</body>
+</html>

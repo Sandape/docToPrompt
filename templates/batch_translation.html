@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量转译 - AI Prompt 生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #eef2ff;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --white: #ffffff;
+            --accent: #8b5cf6;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            padding: 0 2rem;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .breadcrumb a {
+            color: var(--gray-600);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--gray-400);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .content-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .coming-soon-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 64px 48px;
+            border: 2px solid var(--gray-100);
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coming-soon-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--warning), #f97316, #ea580c);
+        }
+
+        .coming-soon-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 32px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .coming-soon-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 16px;
+        }
+
+        .coming-soon-subtitle {
+            font-size: 20px;
+            color: var(--warning);
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .coming-soon-desc {
+            font-size: 16px;
+            color: var(--gray-600);
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
+
+        .feature-preview {
+            background: var(--gray-50);
+            border-radius: 16px;
+            padding: 32px;
+            margin: 40px 0;
+            text-align: left;
+        }
+
+        .feature-preview-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: var(--gray-700);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .feature-list li i {
+            color: var(--success);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 28px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-family: inherit;
+            min-width: 160px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Progress indicator */
+        .progress-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 32px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .progress-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--warning), #f97316);
+            width: 35%;
+            border-radius: 4px;
+            animation: progressGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes progressGlow {
+            from {
+                box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+            }
+            to {
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+            }
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .coming-soon-card {
+                padding: 48px 32px;
+            }
+
+            .coming-soon-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            .coming-soon-title {
+                font-size: 28px;
+            }
+
+            .coming-soon-subtitle {
+                font-size: 18px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <a href="/" class="logo">
+                <i class="fas fa-magic"></i>
+                AI Prompt 生成器
+            </a>
+            <nav class="breadcrumb">
+                <a href="/"><i class="fas fa-home"></i> 主菜单</a>
+                <span class="breadcrumb-separator">/</span>
+                <span>批量转译</span>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-container fade-in">
+                <div class="coming-soon-card">
+                    <div class="coming-soon-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    
+                    <h1 class="coming-soon-title">批量转译功能</h1>
+                    <h2 class="coming-soon-subtitle">敬请期待</h2>
+                    
+                    <p class="coming-soon-desc">
+                        我们正在紧锣密鼓地开发批量转译功能，这将是一个革命性的功能，
+                        帮助您一次性处理多个接口文档，大幅提升工作效率。
+                    </p>
+
+                    <div class="feature-preview">
+                        <h3 class="feature-preview-title">
+                            <i class="fas fa-star"></i>
+                            即将推出的强大功能
+                        </h3>
+                        <ul class="feature-list">
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>批量文档上传：</strong>支持同时上传多个API文档文件</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>智能解析识别：</strong>自动识别文档格式并提取接口信息</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>并行处理能力：</strong>多线程处理，大幅提升生成速度</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>统一模板管理：</strong>批量生成的Prompt模板统一管理和导出</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>进度实时监控：</strong>实时查看批量处理进度和状态</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span><strong>错误处理机制：</strong>智能错误检测和修复建议</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="progress-section">
+                        <h3 class="progress-title">开发进度</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <p class="progress-text">功能开发中... 预计完成度：35%</p>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="/interface-type-menu" class="btn btn-primary">
+                            <i class="fas fa-gem"></i>
+                            使用单次精译
+                        </a>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            返回主菜单
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 添加页面动画效果
+        document.addEventListener('DOMContentLoaded', function() {
+            // 可以在这里添加更多交互效果
+            console.log('批量转译页面加载完成');
+            
+            // 模拟进度动画
+            setTimeout(() => {
+                const progressFill = document.querySelector('.progress-fill');
+                if (progressFill) {
+                    progressFill.style.transition = 'width 2s ease-in-out';
+                    progressFill.style.width = '35%';
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

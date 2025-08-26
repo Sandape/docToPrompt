@@ -1,0 +1,27 @@
+# Web框架
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# 数据验证
+pydantic==2.5.0
+email-validator==2.1.0
+
+# 表单数据处理
+python-multipart==0.0.6
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# 模板引擎（用于HTML页面）
+jinja2==3.1.2
+
+# 认证和安全
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# 开发和测试工具
+pytest==7.4.3
+httpx==0.25.2
+
+# 系统信息
+psutil==5.9.6

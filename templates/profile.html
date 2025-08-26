@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - AI Prompt 生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #eef2ff;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --white: #ffffff;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--white) 50%, var(--primary-light) 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .header {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .main-content {
+            padding: 32px 0;
+        }
+
+        .profile-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .profile-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .profile-subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .profile-content {
+            padding: 32px 24px;
+        }
+
+        .profile-tabs {
+            display: flex;
+            background: var(--gray-100);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 32px;
+        }
+
+        .profile-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--gray-600);
+            transition: all 0.2s ease;
+        }
+
+        .profile-tab.active {
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: var(--white);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-input[readonly] {
+            background: var(--gray-50);
+            color: var(--gray-600);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid;
+            display: none;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background: #fefce8;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .info-item {
+            background: var(--gray-50);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-content {
+                padding: 24px 20px;
+            }
+            
+            .profile-header {
+                padding: 24px 20px;
+            }
+            
+            .nav-links {
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/prompt-generator" class="logo">
+                    <i class="fas fa-magic"></i>
+                    AI Prompt 生成器
+                </a>
+                <div class="nav-links">
+                    <a href="/prompt-generator">
+                        <i class="fas fa-home"></i> 首页
+                    </a>
+                    <a href="#" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> 退出
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-title">
+                        <i class="fas fa-user-circle"></i>
+                        个人中心
+                    </div>
+                    <div class="profile-subtitle">管理您的账户信息和设置</div>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="profile-tabs">
+                        <button class="profile-tab active" onclick="switchTab('info')">基本信息</button>
+                        <button class="profile-tab" onclick="switchTab('username')">修改用户名</button>
+                        <button class="profile-tab" onclick="switchTab('password')">修改密码</button>
+                        <button class="profile-tab" onclick="switchTab('ai')">AI设置</button>
+                    </div>
+
+                    <div id="alert" class="alert"></div>
+
+                    <!-- 基本信息 -->
+                    <div id="infoTab" class="tab-content active">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">用户名</div>
+                                <div class="info-value" id="displayUsername">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">邮箱地址</div>
+                                <div class="info-value" id="displayEmail">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">注册时间</div>
+                                <div class="info-value" id="displayCreatedAt">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">账户状态</div>
+                                <div class="info-value" id="displayStatus">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 修改用户名 -->
+                    <div id="usernameTab" class="tab-content">
+                        <form id="usernameForm">
+                            <div class="form-group">
+                                <label class="form-label">当前用户名</label>
+                                <input type="text" id="currentUsername" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">新用户名</label>
+                                <input type="text" id="newUsername" class="form-input" placeholder="请输入新用户名" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                更新用户名
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 修改密码 -->
+                    <div id="passwordTab" class="tab-content">
+                        <form id="passwordForm">
+                            <div class="form-group">
+                                <label class="form-label">当前密码</label>
+                                <input type="password" id="oldPassword" class="form-input" placeholder="请输入当前密码" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">新密码</label>
+                                <input type="password" id="newPassword" class="form-input" placeholder="请输入新密码（6位以上）" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">确认新密码</label>
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="请再次输入新密码" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key"></i>
+                                更新密码
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- AI设置 -->
+                    <div id="aiTab" class="tab-content">
+                        <form id="aiForm">
+                            <div class="form-group">
+                                <label class="form-label">API类型</label>
+                                <select id="apiType" class="form-input" required onchange="updateDefaultConfig()">
+                                    <option value="">请选择API类型</option>
+                                    <option value="openai">OpenAI (ChatGPT)</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">API URL</label>
+                                <input type="url" id="apiUrl" class="form-input" placeholder="API服务地址" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">API密钥</label>
+                                <input type="text" id="apiKey" class="form-input" placeholder="请输入API密钥" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">模型名称</label>
+                                <input type="text" id="modelName" class="form-input" placeholder="模型名称" required>
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    保存配置
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="testAIConnection()" id="testBtn">
+                                    <i class="fas fa-plug"></i>
+                                    测试连接
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentUser = null;
+
+        function switchTab(tab) {
+            // 切换标签页状态
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            
+            // 切换内容显示
+            document.querySelectorAll('.tab-content').forEach(f => f.classList.remove('active'));
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            
+            // 清除提示信息
+            hideAlert();
+        }
+
+        function showAlert(type, message) {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function hideAlert() {
+            document.getElementById('alert').style.display = 'none';
+        }
+
+        function showDetailedAlert(type, title, details) {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 8px;">${title}</div>
+                <div style="white-space: pre-line; font-family: monospace; font-size: 13px; line-height: 1.4;">${details}</div>
+            `;
+            alert.style.display = 'block';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString('zh-CN');
+        }
+
+        async function loadUserInfo() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/auth';
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    displayUserInfo(currentUser);
+                    await loadAIConfig();
+                } else {
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/auth';
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+                showAlert('error', '加载用户信息失败');
+            }
+        }
+
+        function displayUserInfo(user) {
+            document.getElementById('displayUsername').textContent = user.username;
+            document.getElementById('displayEmail').textContent = user.email;
+            document.getElementById('displayCreatedAt').textContent = formatDate(user.created_at);
+            document.getElementById('displayStatus').textContent = user.is_active ? '正常' : '已禁用';
+            
+            document.getElementById('currentUsername').value = user.username;
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/auth';
+        }
+
+        // 修改用户名表单提交
+        document.getElementById('usernameForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newUsername = document.getElementById('newUsername').value;
+            if (!newUsername) {
+                showAlert('error', '请输入新用户名');
+                return;
+            }
+            
+            const token = localStorage.getItem('access_token');
+            hideAlert();
+            
+            try {
+                const response = await fetch('/auth/me', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ username: newUsername })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', '用户名更新成功');
+                    currentUser = result;
+                    displayUserInfo(currentUser);
+                    document.getElementById('newUsername').value = '';
+                } else {
+                    showAlert('error', result.detail || '更新失败');
+                }
+            } catch (error) {
+                console.error('Username update error:', error);
+                showAlert('error', '网络错误，请重试');
+            }
+        });
+
+        // 修改密码表单提交
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                showAlert('error', '请填写完整信息');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showAlert('error', '新密码长度不能少于6位');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showAlert('error', '两次输入的新密码不一致');
+                return;
+            }
+            
+            const token = localStorage.getItem('access_token');
+            hideAlert();
+            
+            try {
+                const response = await fetch('/auth/me/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        old_password: oldPassword,
+                        new_password: newPassword 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', '密码修改成功');
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    showAlert('error', result.detail || '密码修改失败');
+                }
+            } catch (error) {
+                console.error('Password update error:', error);
+                showAlert('error', '网络错误，请重试');
+            }
+        });
+
+        // AI配置相关功能
+        async function loadAIConfig() {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch('/ai/config', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const config = await response.json();
+                    if (config.is_configured) {
+                        document.getElementById('apiType').value = config.api_type || '';
+                        document.getElementById('apiUrl').value = config.api_url || '';
+                        document.getElementById('apiKey').value = config.api_key || '';
+                        document.getElementById('modelName').value = config.model_name || '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading AI config:', error);
+            }
+        }
+
+        async function updateDefaultConfig() {
+            const apiType = document.getElementById('apiType').value;
+            if (!apiType) return;
+
+            try {
+                const response = await fetch(`/ai/default-config/${apiType}`);
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('apiUrl').value = config.api_url || '';
+                    document.getElementById('modelName').value = config.model_name || '';
+                }
+            } catch (error) {
+                console.error('Error loading default config:', error);
+            }
+        }
+
+        async function testAIConnection() {
+            const testBtn = document.getElementById('testBtn');
+            const originalText = testBtn.innerHTML;
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
+
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch('/ai/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message: "你好" })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // 显示详细的测试结果
+                    const details = [
+                        `✅ 连接成功！`,
+                        `🤖 模型: ${result.ai_model}`,
+                        `⏱️ 响应时间: ${result.response_time}秒`,
+                        `💬 测试消息: "${result.test_message}"`,
+                        `🗨️ AI回复: "${result.message}"`
+                    ].join('\n');
+                    
+                    showDetailedAlert('success', '🎉 AI连接测试成功', details);
+                } else {
+                    const errorDetails = [
+                        `❌ 连接失败`,
+                        result.ai_model ? `🤖 模型: ${result.ai_model}` : '',
+                        result.response_time ? `⏱️ 响应时间: ${result.response_time}秒` : '',
+                        `💬 测试消息: "${result.test_message || '你好'}"`,
+                        `🚫 错误: ${result.error || 'AI连接测试失败'}`
+                    ].filter(line => line).join('\n');
+                    
+                    showDetailedAlert('error', '❌ AI连接测试失败', errorDetails);
+                }
+            } catch (error) {
+                console.error('AI test error:', error);
+                showAlert('error', '网络错误，请重试');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.innerHTML = originalText;
+            }
+        }
+
+        // AI配置表单提交
+        document.getElementById('aiForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const apiType = document.getElementById('apiType').value;
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const modelName = document.getElementById('modelName').value;
+            
+            if (!apiType || !apiUrl || !apiKey || !modelName) {
+                showAlert('error', '请填写完整的AI配置信息');
+                return;
+            }
+            
+            const token = localStorage.getItem('access_token');
+            hideAlert();
+            
+            try {
+                const response = await fetch('/ai/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        api_type: apiType,
+                        api_url: apiUrl,
+                        api_key: apiKey,
+                        model_name: modelName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', 'AI配置保存成功');
+                } else {
+                    showAlert('error', result.detail || 'AI配置保存失败');
+                }
+            } catch (error) {
+                console.error('AI config update error:', error);
+                showAlert('error', '网络错误，请重试');
+            }
+        });
+
+        // 页面加载时获取用户信息
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadAIConfig();
+        });
+    </script>
+</body>
+</html>
